@@ -27,12 +27,14 @@ end.addEventListener('change', function(event){
 
 var button = document.getElementById('button');
 button.addEventListener('click', function(event){
+    wageLabel.innerHTML = 'getting account details...'
     var url = 'https://webapi.timedoctor.com/v1.1/companies?access_token='+ accessToken +'&_format=json';
     httpGetAsync(url, function(value){
         var account = JSON.parse(value).accounts[0];
         var worklogUrl = 'https://webapi.timedoctor.com/v1.1/companies/'+ account.company_id +'/worklogs?access_token='+ accessToken 
                          +'&_format=json&start_date='+ startDate +'&end_date='+ endDate +'&user_ids='+ account.user_id;
 
+        wageLabel.innerHTML = 'getting tasks and projects...'
         httpGetAsync(worklogUrl, function(value){
             var wage = JSON.parse(value).total / 3600 * hourlyRate;
             console.log(wage);
