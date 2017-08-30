@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<hmtl>
+
+    <head>
+        <title>Time Doctor Wage Calculator</title>
+    </head>
+
+    <body>
+        <div class="row">
+            <div class="col-sm-4"></div>
+            <div class="col-sm-4">
+                <br />
+                <h4><strong>Time Doctor Wage Calculator</strong></h4>
+                <br />
+                <table style="width:100%">
+                    <tr>
+                        <td><label>Token</label></td>
+                        <td><input id="token" type="text"></td>
+                    </tr>
+                    <tr>
+                        <td><label>Rate</label></td>
+                        <td><input id="rate" type="text"></td>
+                    </tr>
+                    <tr>
+                        <td><label>Start Date</label></td>
+                        <td><input id="start-date" type="text" placeholder="yyyy-MM-dd"></td>
+                    </tr>
+                    <tr>
+                        <td><label>End Date</label></td>
+                        <td><input id="end-date" type="text" placeholder="yyyy-MM-dd"></td>
+                    </tr>
+                </table>
+
+                <br />
+                <p>
+                    Instructions:<br />
+                    1. Get token from this <a target="_blank" href="https://webapi.timedoctor.com/oauth/v2/auth?client_id=1_1bhjinec22m84ww044k0808kgs4c8g8o0s8ccsgo0048400ooo&redirect_uri=https%3A%2F%2Fadmin.timedoctor.com%2Fv2%2Fcontent%2Fget_api_key.php&response_type=token">link</a><br />
+                    2. Enter your hourly rate<br />
+                    3. Press button, and you're done.<br />
+                </p>
+                <button id="button">Calculate Wage</button><br><br>
+                <label id="wage">You're wage per this roll period will appear here!</label>
+
+                <br>
+                <br>
+                <br>
+                <br>
+                <br>
+                <i>@author - Jovan Jiv O. Cahiles</i>
+            </div>
+            <div class="col-sm-4"></div>
+        </div>
+    </body>
+
+    <script type="text/javascript" src="app.js" defer></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js" defer></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" defer></script>
+</hmtl>
