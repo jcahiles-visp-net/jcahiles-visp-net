@@ -61,7 +61,8 @@ button.addEventListener('click', function(event){
     var getAccount = $.get(url, function(data){
         var account = data.accounts[0];
         let weekTotal = {};
-        const getWorklogPerDay = async () => {            
+        const getWorklogPerDay = async () => {
+            wageLabel.innerHTML = 'getting worklogs details...'
             for(let i = 0; i < weeks.length; i++){
                 let totalTime = 0;
                 let totalHolidaysInWeek = 0;
@@ -76,21 +77,23 @@ button.addEventListener('click', function(event){
                     }));
                     worklogDates[weeks[i]][j].items = items.worklogs.items;
 
+                    const currentDate = worklogDates[weeks[i]][j].date;
                     const worklogItems = items.worklogs.items;
                     let perDayTotal = 0;
                     let morningBreak = 0;
                     let afternoonBreak = 0;
                     worklogItems.forEach(element => {
                         if(element.task_name == 'Paid Break' && element.length <= 900){
-                            moment(element.end_time)
                             perDayTotal += parseInt(element.length);
                         } else if(element.task_name != 'Paid Break'){
                             perDayTotal += parseInt(element.length);
                         }
                     });
 
-                    worklogDates[weeks[i]][j].total = perDayTotal;
-                    totalTime += perDayTotal;
+                    if(moment(currentDate).isBetween(moment(startDate).subtract(1, 'days'), moment(endDate).add(1, 'days'))){
+                        worklogDates[weeks[i]][j].total = perDayTotal;
+                        totalTime += perDayTotal;
+                    }
 
                     holidays.forEach(element => {
                         if(moment(element, 'M/D/YYYY').isSame(worklogDates[weeks[i]][j].date) && (moment(element, 'M/D/YYYY').isBetween(moment().day("Sunday").week(weeks[i]), moment().day("Saturday").week(weeks[i])))){
@@ -98,6 +101,7 @@ button.addEventListener('click', function(event){
                         }
                     });
                 }
+                wageLabel.innerHTML = 'calculating weekly total time and overtimes...'
                 console.log('total time', totalTime);
                 weekTotal[weeks[i]] = {};
                 weekTotal[weeks[i]].total = totalTime;
@@ -107,64 +111,17 @@ button.addEventListener('click', function(event){
             }
             console.log('updated the days', worklogDates);
             console.log('total time per week', weekTotal);
+            let basicPay = 0;
+            
+            for(let i = 0; i < weeks.length; i++){
+                const intHourlyRate = parseFloat(hourlyRate);
+                const overtimeHourlyRate = (intHourlyRate * 0.3) + intHourlyRate;
+                let tempPay = (weekTotal[weeks[i]].total / 3600) * intHourlyRate;
+                let overtimePay = (weekTotal[weeks[i]].overtime / 3600) * overtimeHourlyRate;
+                basicPay += tempPay + overtimePay;
+            }
+            wageLabel.innerHTML = 'Php ' + round(basicPay, 2);
         };
-
-        var paidBreakUrl = generateTimeDoctorURL({
-            company_id: account.company_id,
-            access_token: accessToken,
-            start_date: startDate,
-            end_date: endDate,
-            task_id: 14832166,
-            query_type: 'worklogs',
-            consolidated: 0
-        });
-
-        var unconsolodatedLogs = generateTimeDoctorURL({
-            company_id: account.company_id,
-            access_token: accessToken,
-            start_date: startDate,
-            end_date: endDate,
-            query_type: 'worklogs',
-            consolidated: 0
-        });
-
-        var payload = null;
-        $.ajax({
-            async: false,
-            type: 'GET',
-            url: paidBreakUrl,
-            success: function(data) {
-                payload = data.worklogs.items;
-            }
-        });
-        console.log('payload', payload);
-        var totalPaidBreak = 0;
-        for(var i = 0; i < payload.length; i++){
-            if(payload[i].length <= 900){
-                totalPaidBreak += parseInt(payload[i].length);
-            }
-        }
-        console.log('total paid break', totalPaidBreak);
-        var workLogs = null;
-        $.ajax({
-            async: false,
-            type: 'GET',
-            url: unconsolodatedLogs,
-            success: function(data) {
-                workLogs = data.worklogs.items;
-            }
-        });
-
-        var totalWorkingTime = 0;
-        for(var i = 0; i < workLogs.length; i++){
-            if(workLogs[i].task_id == 14832166){
-                workLogs.splice(i, 1);
-            } else {
-                totalWorkingTime += parseInt(workLogs[i].length);
-            }
-        }
-        totalWorkingTime += totalPaidBreak;
-        console.log('total work time', totalWorkingTime);
 
         getWorklogPerDay();
     });
@@ -217,3 +174,8 @@ var generateTimeDoctorURL = function(args){
 
     return queryURL;
 }
+
+function round(value, decimals) {
+    return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+  }
+  
