@@ -3,6 +3,30 @@ var hourlyRate = '';
 var startDate = '';
 var endDate = '';
 
+const holidays = [
+    '1/1/2017',
+    '1/2/2017',
+    '1/28/2017',
+    '2/25/2017',
+    '4/9/2017',
+    '4/13/2017',
+    '4/14/2017',
+    '4/15/2017',
+    '5/1/2017',
+    '6/12/2017',
+    '6/26/2017',
+    '8/21/2017',
+    '8/28/2017',
+    '6/26/2017',
+    '10/31/2017',
+    '11/1/2017',
+    '11/30/2017',
+    '12/25/2017',
+    '12/30/2017',
+    '12/31/2017',
+    '8/28/2017',
+];
+
 var token = document.getElementById('token');
 token.addEventListener('change', function(event){
     accessToken = event.target.value;
@@ -29,7 +53,7 @@ var button = document.getElementById('button');
 button.addEventListener('click', function(event){
     wageLabel.innerHTML = 'getting account details...'
     var url = 'https://webapi.timedoctor.com/v1.1/companies?access_token='+ accessToken +'&_format=json';
-    var worklogDates = groupByWeeks(startDate, endDate);
+    var worklogDates = generateDatesPerWeek(startDate, endDate);
     const weeks = Object.keys(worklogDates);
     console.log('group by weeks', worklogDates)
     console.log('index of weeks', weeks);
@@ -40,6 +64,7 @@ button.addEventListener('click', function(event){
         const getWorklogPerDay = async () => {            
             for(let i = 0; i < weeks.length; i++){
                 let totalTime = 0;
+                let totalHolidaysInWeek = 0;
                 for(let j = 0; j < worklogDates[weeks[i]].length; j++){
                     let items = await $.get(generateTimeDoctorURL({
                         company_id: account.company_id,
@@ -52,15 +77,22 @@ button.addEventListener('click', function(event){
                     worklogDates[weeks[i]][j].items = items.worklogs.items;
                     worklogDates[weeks[i]][j].total = items.total;
                     totalTime += items.total;
+
+                    holidays.forEach(element => {
+                        if(moment(element, 'M/D/YYYY').isSame(worklogDates[weeks[i]][j].date)){
+                            totalHolidaysInWeek++;
+                        }
+                    });
                 }
                 console.log('total time', totalTime);
                 weekTotal[weeks[i]] = {};
                 weekTotal[weeks[i]].total = totalTime;
+                weekTotal[weeks[i]].week_length = 5 - totalHolidaysInWeek;
+                weekTotal[weeks[i]].overtime = 5 - totalHolidaysInWeek;                
             }
             console.log('updated the days', worklogDates);
             console.log('total time per week', weekTotal);
         };
-        getWorklogPerDay();
 
         var paidBreakUrl = generateTimeDoctorURL({
             company_id: account.company_id,
@@ -90,14 +122,14 @@ button.addEventListener('click', function(event){
                 payload = data.worklogs.items;
             }
         });
-        // console.log('payload', payload);
+        console.log('payload', payload);
         var totalPaidBreak = 0;
         for(var i = 0; i < payload.length; i++){
             if(payload[i].length <= 900){
                 totalPaidBreak += parseInt(payload[i].length);
             }
         }
-        // console.log('total paid break', totalPaidBreak);
+        console.log('total paid break', totalPaidBreak);
         var workLogs = null;
         $.ajax({
             async: false,
@@ -117,7 +149,9 @@ button.addEventListener('click', function(event){
             }
         }
         totalWorkingTime += totalPaidBreak;
-        // console.log('total work time', totalWorkingTime);
+        console.log('total work time', totalWorkingTime);
+
+        getWorklogPerDay();
     });
 });
 
@@ -131,17 +165,25 @@ var enumerateDaysBetweenDates = function(startDate, endDate) {
     return dates;
 };
 
-var groupByWeeks = function(startDate, endDate){
+var generateDatesPerWeek = function(startDate, endDate){
     var dates = enumerateDaysBetweenDates(moment(startDate), moment(endDate));
     var groupWeeks = {};
-    //moment().day("Sunday").week(33) generate the first day of a week
-    for(var i = 0; i < dates.length; i++){
+    
+    for(let i = 0; i < dates.length; i++){
         var index = moment(dates[i]).week();
-        if(groupWeeks[index] instanceof Array){
-            groupWeeks[index].push({date: dates[i]});
-        } else {
+        if(!(groupWeeks[index] instanceof Array)){
             groupWeeks[index] = [];
-            groupWeeks[index].push({date: dates[i]});
+        }
+    }
+    let weeks = Object.keys(groupWeeks);
+
+    for(let i = 0; i < weeks.length; i++){
+        let startOfWeek = moment().day("Sunday").week(weeks[i]);
+        let endOfWeek = moment().day("Saturday").week(weeks[i]);
+        let datesPerWeek = enumerateDaysBetweenDates(moment(startOfWeek), moment(endOfWeek));
+
+        for(let j = 0; j < datesPerWeek.length; j++){
+            groupWeeks[weeks[i]].push({date: datesPerWeek[j]});
         }
     }
 
