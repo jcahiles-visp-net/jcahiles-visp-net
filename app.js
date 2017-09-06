@@ -75,11 +75,25 @@ button.addEventListener('click', function(event){
                         consolidated: 0
                     }));
                     worklogDates[weeks[i]][j].items = items.worklogs.items;
-                    worklogDates[weeks[i]][j].total = items.total;
-                    totalTime += items.total;
+
+                    const worklogItems = items.worklogs.items;
+                    let perDayTotal = 0;
+                    let morningBreak = 0;
+                    let afternoonBreak = 0;
+                    worklogItems.forEach(element => {
+                        if(element.task_name == 'Paid Break' && element.length <= 900){
+                            moment(element.end_time)
+                            perDayTotal += parseInt(element.length);
+                        } else if(element.task_name != 'Paid Break'){
+                            perDayTotal += parseInt(element.length);
+                        }
+                    });
+
+                    worklogDates[weeks[i]][j].total = perDayTotal;
+                    totalTime += perDayTotal;
 
                     holidays.forEach(element => {
-                        if(moment(element, 'M/D/YYYY').isSame(worklogDates[weeks[i]][j].date)){
+                        if(moment(element, 'M/D/YYYY').isSame(worklogDates[weeks[i]][j].date) && (moment(element, 'M/D/YYYY').isBetween(moment().day("Sunday").week(weeks[i]), moment().day("Saturday").week(weeks[i])))){
                             totalHolidaysInWeek++;
                         }
                     });
@@ -88,7 +102,8 @@ button.addEventListener('click', function(event){
                 weekTotal[weeks[i]] = {};
                 weekTotal[weeks[i]].total = totalTime;
                 weekTotal[weeks[i]].week_length = 5 - totalHolidaysInWeek;
-                weekTotal[weeks[i]].overtime = 5 - totalHolidaysInWeek;                
+                const isOvertime  = totalTime > (weekTotal[weeks[i]].week_length + 1) * 8 * 3600;
+                weekTotal[weeks[i]].overtime = isOvertime ? totalTime - (weekTotal[weeks[i]].week_length + 1) * 8 * 3600 : 0;                
             }
             console.log('updated the days', worklogDates);
             console.log('total time per week', weekTotal);
